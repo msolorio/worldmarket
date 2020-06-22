@@ -48,8 +48,8 @@ function askPostItemInfo() {
   ]);
 }
 
-function askBidItem(itemList) {
-  return inquirer.prompt([
+async function askBidItem(itemList) {
+  const {chosenItemToBidOn} = await inquirer.prompt([
     {
       message: "\nWhich item would you like to bid on?\n",
       type: "list",
@@ -57,24 +57,54 @@ function askBidItem(itemList) {
       choices: itemList
     }
   ]);
+
+  return chosenItemToBidOn;
 }
 
-function askBidAmount() {
-  return inquirer.prompt([
-    {
-      message: "\nHow much would you like to bid? (input a dollar amount)\n",
-      type: "input",
-      name: "bidAmount"
-    }
-  ]);
+async function askBidAmount() {
+  const {bidAmount} = await inquirer.prompt([{
+    message: "\nHow much would you like to bid? (input a dollar amount)\n",
+    type: "input",
+    name: "bidAmount"
+  }]);
+
+  return parseInt(bidAmount);
+}
+
+function checkIfHighestBid(bidAmount, chosenItemToBidOn, itemsData) {
+  const currentHighestBid = itemsData.find((item) => item.name === chosenItemToBidOn).highest_bid;
+
+  return bidAmount > currentHighestBid;
+}
+
+async function askIfBidAgain() {
+  const {bidAgain} = await inquirer.prompt([{
+    message: "Would you like to bid again?",
+    type: "confirm",
+    name: "bidAgain"
+  }]);
+
+  return bidAgain;
+}
+
+async function handleBid(chosenItemToBidOn, itemsData) {
+  const bidAmount = await askBidAmount();
+  
+  const madeHighestBid = await checkIfHighestBid(bidAmount, chosenItemToBidOn, itemsData);
+
+  if (madeHighestBid) {
+    console.log("in madeHighestBid if");
+  } else {
+    await askIfBidAgain() ? await handleBid(chosenItemToBidOn, itemsData) : await handleActionType();
+  }
 }
 
 async function handleBidOnItem() {
   const itemsData = await query.getItemsToBidOn();
   const itemList = itemsData.map(item => item.name);
   const chosenItemToBidOn = await askBidItem(itemList);
-  const bidAmount = await askBidAmount();
-  
+
+  await handleBid(chosenItemToBidOn, itemsData);
   // SAY IF THEY HAVE THE HIGHEST BID
   // IF NOT ASK IF THEY WANT TO BID AGAIN
   // OTHERWISE RETURN TO MAIN SCREEN
