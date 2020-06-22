@@ -22,7 +22,7 @@ function askActionType() {
     {
       type: "list",
       name: "actionType",
-      message: "\nWhat would you like to do?\n",
+      message: "What would you like to do?\n",
       choices: ["Bid on an item", "Post an item", "I am finished"]
     }
   ]);
@@ -33,37 +33,43 @@ function askPostItemInfo() {
     {
       type: "input",
       name: "name",
-      message: "\nWhat is the name of the item you'd like to post?\n"
+      message: "What is the name of the item you'd like to post?\n"
     },
     {
-      message: "\nWhat is category does this item fall into?\n",
+      message: "What is category does this item fall into?\n",
       type: "input",
       name: "category"
     },
     {
-      mesage: "\nWhat is the starting bid of the item? (input a dollar amount)\n",
+      mesage: "What is the starting bid of the item? (input a dollar amount)\n",
       type: "input",
       name: "starting_bid"
     }
   ]);
 }
 
-async function askBidItem(itemList) {
+function getItemsList(itemsData) {
+  return itemsData.map(item => `${item.id}. ${item.name}`);
+}
+
+async function askBidItem(itemsData) {
+  const itemsList = getItemsList(itemsData);
+
   const {chosenItemToBidOn} = await inquirer.prompt([
     {
-      message: "\nWhich item would you like to bid on?\n",
+      message: "Which item would you like to bid on?\n",
       type: "list",
       name: "chosenItemToBidOn",
-      choices: itemList
+      choices: itemsList
     }
   ]);
 
-  return chosenItemToBidOn;
+  return parseInt(chosenItemToBidOn);
 }
 
 async function askBidAmount() {
   const {bidAmount} = await inquirer.prompt([{
-    message: "\nHow much would you like to bid? (input a dollar amount)\n",
+    message: "How much would you like to bid? (input a dollar amount)\n",
     type: "input",
     name: "bidAmount"
   }]);
@@ -71,15 +77,15 @@ async function askBidAmount() {
   return parseInt(bidAmount);
 }
 
-function checkIfHighestBid(bidAmount, chosenItemToBidOn, itemsData) {
-  const currentHighestBid = itemsData.find((item) => item.name === chosenItemToBidOn).highest_bid;
+function checkIfHighestBid(bidAmount, chosenItemId, itemsData) {
+  const currentHighestBid = itemsData.find((item) => item.id === chosenItemId).highest_bid;
 
   return bidAmount > currentHighestBid;
 }
 
 async function askIfBidAgain() {
   const {bidAgain} = await inquirer.prompt([{
-    message: "Would you like to bid again?",
+    message: "You didn't outbid the highest bid. Would you like to bid again?",
     type: "confirm",
     name: "bidAgain"
   }]);
@@ -87,24 +93,35 @@ async function askIfBidAgain() {
   return bidAgain;
 }
 
-async function handleBid(chosenItemToBidOn, itemsData) {
+async function handleHighestBid(bidAmount, chosenItemId, itemsData) {
+  await query.updateHighestBid(bidAmount, chosenItemId);
+
+  const itemsList = getItemsList(itemsData);
+  const chosenItem = itemsList.find(item => parseInt(item) === chosenItemId);
+
+  console.log(`You now have the highest bid for
+${chosenItem} - $${bidAmount}\n`);
+
+  return;
+}
+
+async function handleBid(chosenItemId, itemsData) {
   const bidAmount = await askBidAmount();
   
-  const madeHighestBid = await checkIfHighestBid(bidAmount, chosenItemToBidOn, itemsData);
+  const madeHighestBid = await checkIfHighestBid(bidAmount, chosenItemId, itemsData);
 
   if (madeHighestBid) {
-    console.log("in madeHighestBid if");
+    return await handleHighestBid(bidAmount, chosenItemId, itemsData);
   } else {
-    await askIfBidAgain() ? await handleBid(chosenItemToBidOn, itemsData) : await handleActionType();
+    return await askIfBidAgain() ? await handleBid(chosenItemId, itemsData) : await handleActionType();
   }
 }
 
 async function handleBidOnItem() {
   const itemsData = await query.getItemsToBidOn();
-  const itemList = itemsData.map(item => item.name);
-  const chosenItemToBidOn = await askBidItem(itemList);
+  const chosenItemId = await askBidItem(itemsData);
 
-  await handleBid(chosenItemToBidOn, itemsData);
+  return await handleBid(chosenItemId, itemsData);
   // SAY IF THEY HAVE THE HIGHEST BID
   // IF NOT ASK IF THEY WANT TO BID AGAIN
   // OTHERWISE RETURN TO MAIN SCREEN

@@ -20,7 +20,14 @@ function getItemsToBidOn() {
   }
 }
 
+function updateHighestBid(bidAmount, chosenItemId) {
+  return connection.query("UPDATE items SET highest_bid = ? WHERE id = ?", [
+    bidAmount, chosenItemId
+  ]);
+}
+
 module.exports = {
   postItemToDB,
-  getItemsToBidOn
+  getItemsToBidOn,
+  updateHighestBid
 };
