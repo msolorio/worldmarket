@@ -123,9 +123,7 @@ function connectToDB() {
   return new Promise((resolve, reject) => {
 
     connection.connect((err) => {
-      if (err) reject(err);
-
-      console.log("connected to DB");
+      if (err) throw err;
 
       resolve();
     });
@@ -153,9 +151,13 @@ async function handleActionType() {
 }
 
 async function init() {
-  await connectToDB();
+  try {
+    await connectToDB();
 
-  handleActionType();
+    handleActionType();
+  } catch(err) {
+    console.error(err);
+  }
 }
 
 init();
