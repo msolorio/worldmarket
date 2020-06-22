@@ -2,30 +2,13 @@ const inquirer = require("inquirer");
 const connection = require("./db/connection");
 const query = require("./db/query");
 
-// ASK USER IF THEY WANT TO BID ON OR POST AN ITEM
-
-// IF THEY CHOOSE BID ON AN ITEM
-// GET ITEMS FROM DATABASE
-// ASK WHICH ITEM THEY WANT TO BID ON
-// ASK THEM HOW MUCH THEY WANT TO BID
-// SAY IF THEY HAVE THE HIGHEST BID
-// IF NOT ASK IF THEY WANT TO BID AGAIN
-// OTHERWISE RETURN TO MAIN SCREEN
-
-// IF THEY CHOOSE TO POST AN ITEM
-// ASK FOR INFORMATION ABOUT THE ITEM THEY WISH TO POST
-// POST THE ITEM IN THE DATABASE
-// RETURN THE ITEM INFO TO THE USER SAYING IT WAS POSTED SUCCESSFULLY
-
 function askActionType() {
-  return inquirer.prompt([
-    {
+  return inquirer.prompt([{
       type: "list",
       name: "actionType",
       message: "What would you like to do?\n",
       choices: ["Bid on an item", "Post an item", "I am finished"]
-    }
-  ]);
+    }]);
 }
 
 function askPostItemInfo() {
@@ -55,14 +38,12 @@ function getItemsList(itemsData) {
 async function askBidItem(itemsData) {
   const itemsList = getItemsList(itemsData);
 
-  const {chosenItemToBidOn} = await inquirer.prompt([
-    {
+  const {chosenItemToBidOn} = await inquirer.prompt([{
       message: "Which item would you like to bid on?\n",
       type: "list",
       name: "chosenItemToBidOn",
       choices: itemsList
-    }
-  ]);
+    }]);
 
   return parseInt(chosenItemToBidOn);
 }
@@ -122,9 +103,6 @@ async function handleBidOnItem() {
   const chosenItemId = await askBidItem(itemsData);
 
   return await handleBid(chosenItemId, itemsData);
-  // SAY IF THEY HAVE THE HIGHEST BID
-  // IF NOT ASK IF THEY WANT TO BID AGAIN
-  // OTHERWISE RETURN TO MAIN SCREEN
 }
 
 async function handlePostAnItem() {
